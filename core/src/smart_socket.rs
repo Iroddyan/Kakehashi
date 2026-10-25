@@ -20,6 +20,13 @@ pub enum SmartSocketStatus {
     Fail,
 }
 
+/// How a successful response is framed for the request that was sent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OkayPayloadMode {
+    StatusOnly,
+    LengthPrefixed,
+}
+
 /// Errors raised while encoding or decoding smart-socket frames.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SmartSocketError {
@@ -114,15 +121,15 @@ pub fn decode_length_prefixed_payload(input: &[u8]) -> Result<(Vec<u8>, usize), 
 
 /// Decodes one response, returning the number of bytes consumed from the stream.
 ///
-/// Pass `okay_has_length_prefixed_payload` according to the request being answered: an `OKAY`
+/// Pass the successful-response framing mode according to the request being answered: an `OKAY`
 /// can be status-only or followed by a length-prefixed payload. This avoids guessing when a TCP
 /// read ends exactly after the status. A `FAIL` response always carries its framed reason.
 pub fn decode_response(
     input: &[u8],
-    okay_has_length_prefixed_payload: bool,
+    okay_payload_mode: OkayPayloadMode,
 ) -> Result<(SmartSocketResponse, usize), SmartSocketError> {
     let status = decode_status(input)?;
-    if status == SmartSocketStatus::Okay && !okay_has_length_prefixed_payload {
+    if status == SmartSocketStatus::Okay && okay_payload_mode == OkayPayloadMode::StatusOnly {
         return Ok((
             SmartSocketResponse::Okay {
                 payload: Vec::new(),
@@ -161,7 +168,7 @@ fn parse_length(input: &[u8]) -> Result<usize, SmartSocketError> {
 mod tests {
     use super::{
         decode_length_prefixed_payload, decode_response, decode_status, encode_request,
-        SmartSocketError, SmartSocketResponse, SmartSocketStatus,
+        OkayPayloadMode, SmartSocketError, SmartSocketResponse, SmartSocketStatus,
     };
 
     #[test]
@@ -175,7 +182,7 @@ mod tests {
     #[test]
     fn decodes_okay_response_payload() {
         assert_eq!(
-            decode_response(b"OKAY0005helloNEXT", true).unwrap(),
+            decode_response(b"OKAY0005helloNEXT", OkayPayloadMode::LengthPrefixed).unwrap(),
             (
                 SmartSocketResponse::Okay {
                     payload: b"hello".to_vec()
@@ -189,7 +196,7 @@ mod tests {
     fn decodes_status_only_okay() {
         assert_eq!(decode_status(b"OKAY"), Ok(SmartSocketStatus::Okay));
         assert_eq!(
-            decode_response(b"OKAY", false).unwrap(),
+            decode_response(b"OKAY", OkayPayloadMode::StatusOnly).unwrap(),
             (
                 SmartSocketResponse::Okay {
                     payload: Vec::new()
@@ -202,7 +209,7 @@ mod tests {
     #[test]
     fn decodes_fail_response_message() {
         assert_eq!(
-            decode_response(b"FAIL0009bad thingNEXT", false).unwrap(),
+            decode_response(b"FAIL0009bad thingNEXT", OkayPayloadMode::StatusOnly).unwrap(),
             (
                 SmartSocketResponse::Fail {
                     message: b"bad thing".to_vec()
@@ -266,7 +273,7 @@ mod tests {
     fn decodes_captured_host_version_response_fixture() {
         let response = include_bytes!("../../tests/fixtures/host-version-response.txt");
         assert_eq!(
-            decode_response(response, true).unwrap(),
+            decode_response(response, OkayPayloadMode::LengthPrefixed).unwrap(),
             (
                 SmartSocketResponse::Okay {
                     payload: b"0029".to_vec()
