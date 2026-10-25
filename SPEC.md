@@ -128,7 +128,7 @@ SPEC.md  ARCHITECTURE.md  AGENTS.md  GEMINI.md
 - **M6.** Interactive shell terminal.
 - **M7.** Tier 3, advanced settings, polish. Then the Windows UI.
 
-Set a target date for v0.1 (end of M3) before starting M1.
+Target v0.1 date (end of M3): 30 January 2027. Set before starting M1.
 
 ## 10. Open decisions
 
