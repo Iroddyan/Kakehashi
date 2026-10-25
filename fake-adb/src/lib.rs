@@ -154,6 +154,8 @@ fn okay_payload(payload: &[u8]) -> io::Result<Vec<u8>> {
             "response payload exceeds smart-socket limit",
         ));
     }
+    // AOSP `docs/dev/services.md` at commit 1cf2f017d312f73b3dc53bda85ef2610e35a80e9
+    // specifies that host:devices replies follow OKAY with a four-hex-digit length and payload.
     let prefix = format!("{:04x}", payload.len());
     let mut response = Vec::with_capacity(8 + payload.len());
     response.extend_from_slice(b"OKAY");
