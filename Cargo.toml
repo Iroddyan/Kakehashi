@@ -1,0 +1,7 @@
+[workspace]
+members = ["core", "cli", "fake-adb"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+

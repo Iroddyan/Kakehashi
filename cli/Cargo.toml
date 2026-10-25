@@ -1,0 +1,8 @@
+[package]
+name = "kakehashi-cli"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+kakehashi-core = { path = "../core" }
+
