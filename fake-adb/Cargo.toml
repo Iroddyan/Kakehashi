@@ -3,6 +3,9 @@ name = "kakehashi-fake-adb"
 version = "0.1.0"
 edition.workspace = true
 
+[dependencies]
+tokio = { version = "1", features = ["io-util", "macros", "net", "rt", "sync"] }
+
 [dev-dependencies]
 kakehashi-core = { path = "../core" }
 
